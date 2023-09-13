@@ -35,27 +35,26 @@ const App = () => {
       setNotification(null);
     }, 3000); // Duration in milliseconds (3 seconds)
   };
-    
 
   const addPerson = (event) => {
     event.preventDefault();
-  
+
     if (newName.trim() === "" || newNumber.trim() === "") {
       return; // Ignore empty name or number
     }
-  
+
     const existingPerson = persons.find(
       (person) => person.name.toLowerCase() === newName.toLowerCase()
     );
-  
+
     if (existingPerson) {
       const confirmUpdate = window.confirm(
         `${newName} is already added to the phonebook. Do you want to update the number?`
       );
-  
+
       if (confirmUpdate) {
         const updatedPerson = { ...existingPerson, number: newNumber };
-  
+
         personService
           .update(existingPerson.id, updatedPerson)
           .then((response) => {
@@ -76,16 +75,16 @@ const App = () => {
             } else {
               console.log(error);
             }
-          });        
+          });
       }
       return;
     }
-  
+
     const newPerson = {
       name: newName,
       number: newNumber,
     };
-  
+
     personService
       .create(newPerson)
       .then((response) => {
@@ -95,12 +94,13 @@ const App = () => {
         showNotification(`Added ${response.name}`);
       })
       .catch((error) => {
-        console.log(error);
+        if (error.response && error.response.status === 404) {
+          showNotification(`Error: name: ${error.response.data.error}`);
+        } else {
+          console.log(error);
+        }
       });
   };
-  
-
-  
 
   const filteredPersons = persons.filter((person) =>
     person.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -108,7 +108,8 @@ const App = () => {
 
   const hook = () => {
     console.log("effect");
-    personService.getAll()
+    personService
+      .getAll()
       .then((data) => {
         console.log("promise fulfilled");
         setPersons(data);
@@ -117,14 +118,9 @@ const App = () => {
         console.log(error);
       });
   };
-  
-
- 
-  
 
   useEffect(hook, []);
   console.log("render", persons.length, "persons");
-
 
   return (
     <div>
@@ -133,7 +129,7 @@ const App = () => {
         searchQuery={searchQuery}
         handleSearchChange={handleSearchChange}
       />
-       {notification && <Notification message={notification} />}
+      {notification && <Notification message={notification} />}
       <h3>Add a new person</h3>
       <PersonForm
         newName={newName}
